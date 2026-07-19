@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Forever - For Vaishnavi</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Nunito:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <!-- GSAP & Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
+
+    <style>
+        /* ==========================================================================
+           CSS VARIABLES & RESET
+           ========================================================================== */
+        :root {
+            --c-cream: #faf6f0;
+            --c-warm-white: #fffdf8;
+            --c-rose-gold: #c88b7a;
+            --c-soft-coral: #f2b8a2;
+            --c-choco-brown: #49362d;
+            --c-night: #1a1525;
+            --c-sunrise-top: #f2b8a2;
+            --c-sunrise-bottom: #faf6f0;
+            
+            --f-heading: 'Playfair Display', serif;
+            --f-letter: 'Cormorant Garamond', serif;
+            --f-ui: 'Nunito', sans-serif;
+            
+            --shadow-soft: 0 10px 30px rgba(73, 54, 45, 0.08);
+            --shadow-envelope: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: var(--c-night);
+            color: var(--c-choco-brown);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* ==========================================================================
+           BACKGROUND & ENVIRONMENT
+           ========================================================================== */
+        .sky-background {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            z-index: -3;
+            transition: background 2s ease;
+        }
+
+        .sunrise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, var(--c-soft-coral), var(--c-cream));
+            opacity: 0;
+            z-index: -2;
+        }
+
+        .paper-grain {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .particles-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        /* ==========================================================================
+           INTRO SECTION
+           ========================================================================== */
+        .intro-section {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .intro-heading {
+            font-family: var(--f-heading);
+            font-size: clamp(2rem, 5vw, 4rem);
+            color: var(--c-warm-white);
+            margin-bottom: 1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .intro-subtitle {
+            font-family: var(--f-ui);
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--c-soft-coral);
+            font-weight: 300;
+            letter-spacing: 2px;
+            opacity: 0;
+        }
+
+        /* ==========================================================================
+           ENVELOPE INTERACTION
+           ========================================================================== */
+        .envelope-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1200px;
+        }
+
+        .envelope {
+            width: min(90%, 600px);
+            height: 400px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .env-back {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--c-cream);
+            border-radius: 4px;
+            box-shadow: var(--shadow-envelope);
+            overflow: hidden;
+        }
+
+        /* Faux paper texture inside envelope */
+        .env-back::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        .env-front {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            z-index: 3;
+        }
+
+        .env-flap-top {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 60%;
+            background: var(--c-cream);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transform-origin: top;
+            z-index: 5;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1));
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 20px;
+        }
+
+        .env-flap-bottom {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 65%;
+            background: var(--c-warm-white);
+            clip-path: polygon(0 100%, 100% 100%, 50% 0);
+            z-index: 4;
+        }
+
+        .env-flap-left, .env-flap-right {
+            position: absolute;
+            top: 0; width: 50%; height: 100%;
+            background: #f5f0e6;
+            z-index: 3;
+        }
+        .env-flap-left { left: 0; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+        .env-flap-right { right: 0; clip-path: polygon(100% 0, 100% 100%, 0 50%); }
+
+        .wax-seal-container {
+            position: absolute;
+            bottom: -25px; /* Relative to top flap */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wax-seal-container:active { cursor: grabbing; }
+
+        .wax-seal {
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle at 30% 30%, #d89c8c, var(--c-rose-gold), #9e5b47);
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2), inset 0 0 10px rgba(100,30,30,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: var(--f-heading);
+            color: #fffdf8;
+            font-size: 1.8rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .wax-seal::after {
+            content: '';
+            position: absolute;
+            width: 85%; height: 85%;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+        }
+
+        .drag-instruction {
+            font-family: var(--f-ui);
+            font-size: 0.8rem;
+            color: var(--c-warm-white);
+            margin-top: 40px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* ==========================================================================
+           THE LETTER
+           ========================================================================== */
+        .letter-container {
+            position: absolute;
+            top: 10px;
+            left: 5%;
+            width: 90%;
+            height: 95%;
+            background: var(--c-warm-white);
+            z-index: 2;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+
+        .letter-scroll-area {
+            display: none; /* Hidden until opened */
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 4rem 2rem 10rem 2rem;
+            position: relative;
+        }
+
+        .typewriter-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(250, 246, 240, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--c-rose-gold);
+            color: var(--c-choco-brown);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-family: var(--f-ui);
+            font-size: 0.9rem;
+            cursor: pointer;
+            z-index: 50;
+            display: none;
+            transition: all 0.3s ease;
+        }
+        .typewriter-btn:hover { background: var(--c-rose-gold); color: white; }
+
+        .letter-content p {
+            font-family: var(--f-letter);
+            font-size: clamp(1.2rem, 3vw, 1.6rem);
+            line-height: 1.8;
+            color: var(--c-choco-brown);
+            margin-bottom: 2rem;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .highlight-glow {
+            color: var(--c-rose-gold);
+            text-shadow: 0 0 15px rgba(242, 184, 162, 0.6);
+            font-weight: 600;
+        }
+
+        .doodle-heart {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c88b7a'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E") no-repeat center;
+            opacity: 0;
+            transform: scale(0);
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        /* ==========================================================================
+           AUDIO PLAYER & MEDIA
+           ========================================================================== */
+        .audio-player {
+            background: rgba(255, 253, 248, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(200, 139, 122, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin: 3rem 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            opacity: 0;
+        }
+
+        .play-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--c-rose-gold);
+            border: none;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(200, 139, 122, 0.4);
+            transition: transform 0.2s ease;
+        }
+        .play-btn:active { transform: scale(0.95); }
+        .play-btn svg { width: 20px; height: 20px; fill: currentColor; margin-left: 4px; }
+        .play-btn.playing svg { margin-left: 0; }
+
+        .waveform {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 40px;
+            flex-grow: 1;
+        }
+        .bar {
+            width: 4px;
+            background: var(--c-soft-coral);
+            border-radius: 2px;
+            height: 10%;
+            transition: height 0.1s ease;
+        }
+
+        .polaroid-wrapper {
+            margin: 4rem auto;
+            width: 250px;
+            transform: rotate(-3deg);
+            opacity: 0;
+            position: relative;
+        }
+        .polaroid {
+            background: white;
+            padding: 15px 15px 50px 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        .polaroid:hover { transform: scale(1.05) rotate(0deg); z-index: 20; }
+        .polaroid-img {
+            width: 100%;
+            height: 220px;
+            background: #ddd; /* Placeholder for actual photo */
+            background-image: linear-gradient(45deg, #f3ec78, #af4261);
+        }
+        .washi-tape {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%) rotate(2deg);
+            width: 80px;
+            height: 25px;
+            background: rgba(242, 184, 162, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        /* ==========================================================================
+           SPECIAL OVERLAY & SURPRISE
+           ========================================================================== */
+        .special-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255, 253, 248, 0.95);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .special-text {
+            font-family: var(--f-heading);
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            color: var(--c-rose-gold);
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        .gift-section {
+            padding: 10rem 0 5rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+        }
+        
+        .gift-box {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .gift-box:hover { transform: translateY(-5px) scale(1.05); }
+        .gift-box svg { width: 100%; height: 100%; fill: var(--c-rose-gold); }
+
+        .final-message {
+            margin-top: 3rem;
+            text-align: center;
+            opacity: 0;
+            display: none;
+        }
+        .final-message h2 {
+            font-family: var(--f-heading);
+            color: var(--c-choco-brown);
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .final-message p {
+            font-family: var(--f-letter);
+            font-size: 1.5rem;
+            line-height: 1.6;
+            color: var(--c-rose-gold);
+        }
+
+        .outro-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--c-cream);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .outro-text {
+            font-family: var(--f-heading);
+            font-size: 3rem;
+            color: var(--c-choco-brown);
+            opacity: 0;
+            margin: 10px 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Environment -->
+    <div class="sky-background" id="skyBg"></div>
+    <div class="sunrise-overlay" id="sunriseOverlay"></div>
+    <div class="paper-grain"></div>
+    <div class="particles-container" id="particles"></div>
+
+    <!-- Intro -->
+    <section class="intro-section" id="intro">
+        <h1 class="intro-heading">For My Sweet Little Rasgulla ❤️</h1>
+        <p class="intro-subtitle">One last thing before our first anniversary comes to an end...</p>
+    </section>
+
+    <!-- Envelope Interaction -->
+    <section class="envelope-wrapper" id="envelopeSection">
+        <div class="envelope" id="envelope">
+            <div class="env-back"></div>
+            
+            <!-- Hidden Letter inside Envelope -->
+            <div class="letter-container" id="letter">
+                <!-- Content will be injected/revealed here -->
+            </div>
+
+            <div class="env-front">
+                <div class="env-flap-left"></div>
+                <div class="env-flap-right"></div>
+                <div class="env-flap-bottom"></div>
+                <div class="env-flap-top" id="flapTop">
+                    <div class="wax-seal-container" id="waxSealContainer">
+                        <div class="wax-seal" id="waxSeal">V</div>
+                        <div class="drag-instruction" id="dragText">Swipe Up to Open</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Scrollable Letter Area (Activates after opening) -->
+    <div class="letter-scroll-area" id="letterScrollArea">
+        <div class="letter-content" id="letterContent">
+            <p>My Dearest Vaishnavi,</p>
+            <p>If you are reading this, the stars outside are probably fading, and our first year together as husband and wife is coming to a close. I wanted to give you something that time cannot touch.</p>
+            <p>From the moment you walked into my life, everything changed. You brought warmth to my coldest days and light to my darkest corners. You are, without a single doubt, my <span class="highlight-glow">greatest blessing</span>.<span class="doodle-heart"></span></p>
+            <p>Do you remember our first date? I was so nervous, trying to find the perfect words. Now, a whole year later, I realize that I don't need the perfect words—I just need you.</p>
+            
+            <!-- Voice Message -->
+            <div class="audio-player" id="audioPlayer">
+                <button class="play-btn" id="playBtn">
+                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <div class="waveform" id="waveform">
+                    <!-- Bars generated via JS -->
+                </div>
+            </div>
+
+            <p>Every laugh we've shared, every quiet moment, every small disagreement that ended in a tighter hug—it has all woven the most beautiful tapestry of us. You make me want to be a better man.</p>
+            
+            <!-- Photo Memory -->
+            <div class="polaroid-wrapper">
+                
+            </div>
+
+            <p>As we step into our second year, I want you to know that my love for you is only growing. Deeper. Stronger. More vibrant. <span class="highlight-glow">You are my home.</span></p>
+
+            <!-- Final Gift Section -->
+            <div class="gift-section" id="giftSection">
+                <div class="gift-box" id="giftBox">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22 6h-6V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H2v4h20V6zm-12-2h4v2h-4V4zm-8 6v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V12H2z"/>
+                    </svg>
+                </div>
+                <div class="final-message" id="finalMessage">
+                    <h2>Happy First Anniversary, Vaishnavi.</h2>
+                    <p>I'll keep choosing you.<br>Today.<br>Tomorrow.<br>Always.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Special Moment Overlay -->
+    <div class="special-overlay" id="specialOverlay">
+        <h2 class="special-text" id="specialText">You made my world brighter.</h2>
+    </div>
+
+    <!-- Outro Screen -->
+    <div class="outro-screen" id="outroScreen">
+        <div class="outro-text" id="outroText1">The End...</div>
+        <div class="outro-text" id="outroText2" style="font-style: italic; font-size: 2rem;">...or perhaps</div>
+        <div class="outro-text" id="outroText3" style="color: var(--c-rose-gold);">Our Forever.</div>
+    </div>
+
+    <button class="typewriter-btn" id="typewriterBtn">Watch it write itself 🖋️</button>
+
+    <script>
+        // Ensure scripts run after DOM is ready
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // GSAP Registration
+            gsap.registerPlugin(ScrollTrigger, Draggable);
+
+            // Create Floating Particles (Fireflies/Stars)
+            const particlesContainer = document.getElementById('particles');
+            for(let i=0; i<50; i++) {
+                let p = document.createElement('div');
+                p.classList.add('particle');
+                let size = Math.random() * 4 + 1;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.top = Math.random() * 100 + 'vh';
+                p.style.opacity = Math.random() * 0.5 + 0.2;
+                particlesContainer.appendChild(p);
+                
+                // Float animation
+                gsap.to(p, {
+                    y: `-=${Math.random() * 100 + 50}`,
+                    x: `+=${Math.random() * 40 - 20}`,
+                    opacity: 0,
+                    duration: Math.random() * 5 + 5,
+                    repeat: -1,
+                    yoyo: true,
+                    ease: "sine.inOut",
+                    delay: Math.random() * 5
+                });
+            }
+
+            // Intro Animations
+            const tlIntro = gsap.timeline({delay: 0.5});
+            tlIntro.to(".intro-heading", {opacity: 1, y: 0, duration: 1.5, ease: "power3.out"})
+                   .to(".intro-subtitle", {opacity: 1, duration: 1.5, ease: "power2.out"}, "-=0.8");
+
+            // Envelope Interaction Setup
+            const flapTop = document.getElementById('flapTop');
+            const envelope = document.getElementById('envelope');
+            const letter = document.getElementById('letter');
+            const scrollArea = document.getElementById('letterScrollArea');
+            const envelopeSection = document.getElementById('envelopeSection');
+
+            // Draggable Wax Seal
+            Draggable.create("#waxSealContainer", {
+                type: "y",
+                bounds: { minY: -150, maxY: 0 },
+                onDrag: function() {
+                    gsap.to("#dragText", {opacity: 0, duration: 0.3});
+                },
+                onDragEnd: function() {
+                    if (this.y < -60) {
+                        this.disable();
+                        openEnvelope();
+                    } else {
+                        gsap.to(this.target, {y: 0, duration: 0.5, ease: "back.out(1.5)"});
+                        gsap.to("#dragText", {opacity: 1, duration: 0.3});
+                    }
+                }
+            });
+
+            // Open Envelope Timeline
+            function openEnvelope() {
+                const tl = gsap.timeline({
+                    onComplete: () => {
+                        // Switch contexts: transition from absolute envelope to scrollable document
+                        envelopeSection.style.display = 'none';
+                        document.body.style.overflowY = 'auto';
+                        scrollArea.style.display = 'block';
+                        
+                        // Inject the letter HTML into the scrollable area visually
+                        // We simulate the letter expanding to full page
+                        initScrollAnimations();
+                    }
+                });
+
+                // 1. Crack Seal & Open Flap
+                tl.to("#waxSealContainer", {scale: 1.2, opacity: 0, duration: 0.4, ease: "power2.in"})
+                  .to(flapTop, {rotateX: 180, duration: 1, ease: "power3.inOut"}, "-=0.2")
+                  // 2. Slide Letter Up
+                  .to(letter, {y: -150, zIndex: 10, duration: 1, ease: "power2.out"}, "-=0.3")
+                  // 3. Zoom Camera (Scale Envelope)
+                  .to(envelope, {scale: 3, y: 500, opacity: 0, duration: 1.5, ease: "power3.inOut"}, "-=0.2")
+                  // 4. Background transition begins
+                  .to(".sky-background", {opacity: 0, duration: 2}, "-=1.5")
+                  .to(".sunrise-overlay", {opacity: 1, duration: 2}, "-=2");
+            }
+
+            // ScrollTrigger Animations (Called after envelope opens)
+            function initScrollAnimations() {
+                
+                // Show Typewriter Button
+                gsap.to("#typewriterBtn", {display: 'block', opacity: 1, delay: 1, duration: 1});
+
+                // Fade in paragraphs one by one as they enter viewport
+                const paragraphs = gsap.utils.toArray('.letter-content p');
+                paragraphs.forEach((p, i) => {
+                    gsap.to(p, {
+                        scrollTrigger: {
+                            trigger: p,
+                            start: "top 85%",
+                        },
+                        opacity: 1,
+                        y: 0,
+                        duration: 1,
+                        ease: "power2.out"
+                    });
+                });
+
+                // Pop in doodles
+                const doodles = gsap.utils.toArray('.doodle-heart');
+                doodles.forEach(d => {
+                    gsap.to(d, {
+                        scrollTrigger: {
+                            trigger: d,
+                            start: "top 85%"
+                        },
+                        scale: 1,
+                        opacity: 1,
+                        duration: 0.6,
+                        ease: "back.out(2)",
+                        delay: 0.5
+                    });
+                });
+
+                // Audio Player fade in
+                gsap.to(".audio-player", {
+                    scrollTrigger: {
+                        trigger: ".audio-player",
+                        start: "top 80%"
+                    },
+                    opacity: 1,
+                    y: 0,
+                    duration: 1,
+                    ease: "power2.out"
+                });
+
+                // Polaroid
+                gsap.to(".polaroid-wrapper", {
+                    scrollTrigger: {
+                        trigger: ".polaroid-wrapper",
+                        start: "top 75%"
+                    },
+                    opacity: 1,
+                    y: 0,
+                    duration: 1.2,
+                    ease: "back.out(1.2)"
+                });
+
+                // Special Moment (80% scroll)
+                ScrollTrigger.create({
+                    trigger: ".gift-section", // Near the end
+                    start: "top 90%",
+                    onEnter: () => triggerSpecialMoment()
+                });
+            }
+
+            // Audio Player Waveform Generation
+            const waveform = document.getElementById('waveform');
+            const numBars = 40;
+            for(let i=0; i<numBars; i++) {
+                let bar = document.createElement('div');
+                bar.classList.add('bar');
+                waveform.appendChild(bar);
+            }
+
+            // Audio Play Simulation
+            const playBtn = document.getElementById('playBtn');
+            let isPlaying = false;
+            let audioInterval;
+
+            playBtn.addEventListener('click', () => {
+                isPlaying = !isPlaying;
+                const bars = document.querySelectorAll('.bar');
+                
+                if(isPlaying) {
+                    playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+                    playBtn.classList.add('playing');
+                    // Animate waveform
+                    audioInterval = setInterval(() => {
+                        bars.forEach(bar => {
+                            bar.style.height = (Math.random() * 80 + 20) + '%';
+                        });
+                    }, 150);
+                } else {
+                    playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+                    playBtn.classList.remove('playing');
+                    clearInterval(audioInterval);
+                    bars.forEach(bar => { bar.style.height = '10%'; });
+                }
+            });
+
+            // Special Moment Logic
+            let specialTriggered = false;
+            function triggerSpecialMoment() {
+                if(specialTriggered) return;
+                specialTriggered = true;
+                
+                // Pause scrolling temporarily by disabling overflow
+                document.body.style.overflowY = 'hidden';
+                
+                const tl = gsap.timeline({
+                    onComplete: () => {
+                        document.body.style.overflowY = 'auto';
+                    }
+                });
+
+                tl.to("#specialOverlay", {opacity: 1, pointerEvents: 'auto', duration: 1.5, ease: "power2.inOut"})
+                  .to("#specialText", {opacity: 1, scale: 1, duration: 1.5, ease: "power3.out"})
+                  // Create floating hearts behind text
+                  .add(() => createFloatingHearts(), "-=1")
+                  .to("#specialText", {opacity: 0, scale: 1.1, duration: 1.5, delay: 2})
+                  .to("#specialOverlay", {opacity: 0, pointerEvents: 'none', duration: 1.5});
+            }
+
+            function createFloatingHearts() {
+                const overlay = document.getElementById('specialOverlay');
+                for(let i=0; i<30; i++) {
+                    let heart = document.createElement('div');
+                    heart.innerHTML = '❤️';
+                    heart.style.position = 'absolute';
+                    heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+                    heart.style.left = (Math.random() * 100) + 'vw';
+                    heart.style.top = '100vh';
+                    heart.style.opacity = 0;
+                    overlay.appendChild(heart);
+
+                    gsap.to(heart, {
+                        y: `-=${window.innerHeight + 100}`,
+                        opacity: 0.8,
+                        duration: Math.random() * 3 + 2,
+                        ease: "power1.out",
+                        onComplete: () => heart.remove()
+                    });
+                }
+            }
+
+            // Final Surprise Gift Box
+            const giftBox = document.getElementById('giftBox');
+            const finalMessage = document.getElementById('finalMessage');
+
+            // Fade in gift box on scroll
+            gsap.to(".gift-section", {
+                scrollTrigger: { trigger: ".gift-section", start: "top 80%" },
+                opacity: 1, duration: 1
+            });
+
+            giftBox.addEventListener('click', () => {
+                const tl = gsap.timeline();
+                // Pop the box
+                tl.to(giftBox, {scale: 1.2, duration: 0.2, ease: "power1.out"})
+                  .to(giftBox, {scale: 0, opacity: 0, duration: 0.4, ease: "back.in(2)"})
+                  // Show text
+                  .add(() => {
+                      giftBox.style.display = 'none';
+                      finalMessage.style.display = 'block';
+                  })
+                  .to(finalMessage, {opacity: 1, y: -20, duration: 1.5, ease: "power3.out"})
+                  // Trigger end sequence
+                  .add(triggerEndingSequence, "+=3");
+            });
+
+            function triggerEndingSequence() {
+                const tl = gsap.timeline();
+                document.body.style.overflowY = 'hidden'; // Lock scroll
+                
+                tl.to("#outroScreen", {opacity: 1, pointerEvents: 'auto', duration: 2})
+                  .to("#outroText1", {opacity: 1, y: -10, duration: 1.5, ease: "power2.out"})
+                  .to("#outroText1", {opacity: 0, duration: 1, delay: 1})
+                  .to("#outroText2", {opacity: 1, y: -10, duration: 1.5})
+                  .to("#outroText3", {opacity: 1, y: -10, duration: 2, ease: "power3.out"}, "+=0.5");
+            }
+
+            // Typewriter Mode Logic
+            document.getElementById('typewriterBtn').addEventListener('click', function() {
+                this.style.display = 'none';
+                // Scroll to top of letter
+                window.scrollTo({top: 0, behavior: 'smooth'});
+                
+                // Hide all paragraphs
+                const paragraphs = document.querySelectorAll('.letter-content p');
+                gsap.set(paragraphs, {opacity: 0, y: 0});
+                
+                // Reveal sequentially using a simple stagger fade to simulate reading/writing flow
+                gsap.to(paragraphs, {
+                    opacity: 1,
+                    duration: 1.5,
+                    stagger: 2,
+                    ease: "power2.inOut"
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
